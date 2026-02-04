@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGNICO: Magnesium Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            overflow-x: hidden;
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+            border: 2px solid #e5e7eb;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+
+        .option-btn.correct {
+            background-color: #10b981 !important;
+            color: white !important;
+            border-color: #059669 !important;
+        }
+
+        .option-btn.wrong {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+
+        .progress-bar {
+            transition: width 0.4s ease-in-out;
+        }
+
+        .hidden { display: none !important; }
+
+        input[type="range"] {
+            accent-color: #10b981;
+        }
+
+        /* Full Screen Result Overlays */
+        #reaction-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .text-pop {
+            animation: textPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        .text-slide-up {
+            animation: slideUp 0.8s ease-out both;
+        }
+
+        @keyframes textPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(40px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Confetti Animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            z-index: 101;
+            top: -10px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+
+    <!-- Reaction Flash Overlay -->
+    <div id="reaction-overlay" class="hidden opacity-0">
+        <div id="reaction-emoji" class="text-8xl mb-6 text-pop"></div>
+        <h2 id="reaction-title" class="text-6xl font-black text-white text-center px-4 tracking-tighter text-pop" style="animation-delay: 0.1s"></h2>
+        <p id="reaction-subtitle" class="text-white/80 font-bold mt-4 text-xl text-slide-up" style="animation-delay: 0.3s"></p>
+    </div>
+
+    <!-- 1. INTRO SCREEN -->
+    <div id="intro-screen" class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center border border-gray-100 overflow-hidden relative">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10">
+            <div class="inline-block px-4 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-widest mb-4">
+                Expo 2024 Special
+            </div>
+            <h1 class="text-4xl font-black tracking-tighter text-black mb-2">MAGNICO</h1>
+            <p class="text-gray-500 font-medium mb-8">The Essential Mineral Experience</p>
+            
+            <div class="text-left space-y-4 mb-8">
+                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <label class="block mb-4">
+                        <span class="text-[10px] font-bold uppercase text-gray-400">Full Name</span>
+                        <input type="text" id="user-name" placeholder="Enter your name" class="w-full mt-1 p-3 rounded-xl border-2 border-gray-200 font-bold outline-none focus:border-black">
+                    </label>
+                    <label class="block">
+                        <span class="text-[10px] font-bold uppercase text-gray-400">Age</span>
+                        <input type="number" id="user-age" placeholder="Your age" class="w-full mt-1 p-3 rounded-xl border-2 border-gray-200 font-bold outline-none focus:border-black">
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="validateAndStart()" class="w-full bg-black text-white font-bold py-5 rounded-2xl hover:scale-[1.02] transition shadow-xl text-lg">
+                Start Experience
+            </button>
+            <p id="intro-error" class="text-red-500 text-xs mt-3 font-bold hidden">Please enter your name and age to continue.</p>
+        </div>
+    </div>
+
+    <!-- 2. QUIZ START SCREEN -->
+    <div id="start-screen" class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center hidden">
+        <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="text-2xl">🏆</span>
+        </div>
+        <h2 class="text-2xl font-extrabold mb-4">Challenge Rules</h2>
+        <div class="bg-emerald-50 rounded-xl p-5 mb-8 text-left border border-emerald-100">
+            <ul class="text-sm space-y-3">
+                <li class="flex gap-2"><span>✅</span> 15 Questions (Now Randomly Shuffled).</li>
+                <li class="flex gap-2"><span>✅</span> 5 Options per question.</li>
+                <li class="flex gap-2 font-bold text-emerald-800"><span>🎁</span> Score 12+ correctly for a FREE sample!</li>
+                <li class="flex gap-2 text-gray-500 italic"><span>⚠️</span> Winners only. Good luck!</li>
+            </ul>
+        </div>
+        <button onclick="startQuiz()" class="w-full bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-600 transition">
+            Begin Quiz
+        </button>
+    </div>
+
+    <!-- 3. QUIZ SCREEN -->
+    <div id="quiz-screen" class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <span id="question-count" class="text-xs font-bold text-emerald-600 uppercase">Question 1 of 15</span>
+            <div class="flex gap-1" id="heart-container">
+                <span class="text-red-500">❤</span><span class="text-red-500">❤</span><span class="text-red-500">❤</span>
+            </div>
+        </div>
+        <div class="w-full bg-gray-100 h-1.5 rounded-full mb-8">
+            <div id="progress" class="progress-bar bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+        </div>
+        <h2 id="question-text" class="text-xl font-bold mb-8 leading-tight text-gray-900 min-h-[60px]">Loading...</h2>
+        <div id="options-container" class="space-y-3"></div>
+    </div>
+
+    <!-- 4. QUIZ RESULT SCREEN -->
+    <div id="result-screen" class="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 text-center hidden">
+        <div id="result-icon" class="mb-6 text-6xl"></div>
+        <h2 id="result-title" class="text-3xl font-extrabold mb-2"></h2>
+        <p id="result-text" class="text-gray-500 mb-8"></p>
+        
+        <div id="winner-tag" class="hidden mb-6 py-2 px-4 bg-emerald-500 text-white font-black rounded-full animate-bounce uppercase text-xs tracking-widest">
+            Eligible for Free Sample! 🎁
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl py-4 px-4 mb-8 border border-gray-100">
+            <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Challenge Score</span>
+            <div class="text-4xl font-black text-black"><span id="final-score">0</span>/15</div>
+        </div>
+
+        <button onclick="startCalculator()" class="w-full py-5 rounded-2xl font-bold bg-black text-white shadow-xl hover:bg-gray-800 transition">
+            Continue to Analysis →
+        </button>
+    </div>
+
+    <!-- 5. CALCULATOR SCREEN -->
+    <div id="calc-screen" class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 hidden">
+        <div class="mb-6">
+            <span id="calc-step-text" class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Step 1 of 6</span>
+            <div class="w-full bg-gray-100 h-1.5 rounded-full mt-2">
+                <div id="calc-progress" class="progress-bar bg-emerald-500 h-1.5 rounded-full" style="width: 16%"></div>
+            </div>
+        </div>
+
+        <div id="calc-content" class="min-h-[300px]"></div>
+
+        <div class="mt-8 flex gap-3">
+            <button id="calc-prev" onclick="prevCalcStep()" class="w-1/4 bg-gray-100 text-gray-500 font-bold py-4 rounded-xl hidden">←</button>
+            <button id="calc-next" onclick="nextCalcStep()" class="flex-1 bg-black text-white font-bold py-4 rounded-xl shadow-lg">Continue</button>
+        </div>
+        <p class="text-[9px] text-gray-300 text-center mt-4 uppercase tracking-widest font-bold">Magnico Bar contains 10g Premium Protein</p>
+    </div>
+
+    <!-- 6. FINAL ANALYSIS RESULTS -->
+    <div id="calc-result" class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 hidden relative">
+        <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+        
+        <h2 class="text-2xl font-extrabold mb-2 text-center">Health Profile for <span id="res-name" class="text-emerald-600">User</span></h2>
+        <p class="text-center text-xs text-gray-400 mb-6 uppercase font-bold tracking-widest">Age: <span id="res-age">0</span></p>
+        
+        <div class="space-y-4 mb-8">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <p class="text-[10px] font-bold text-emerald-700 uppercase mb-1">Daily Mg Target</p>
+                    <p class="text-2xl font-black text-black"><span id="res-goal">0</span><span class="text-sm font-normal ml-1">mg</span></p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">Protein Need</p>
+                    <p class="text-2xl font-black text-black"><span id="res-protein">0</span><span class="text-sm font-normal ml-1">g</span></p>
+                </div>
+            </div>
+
+            <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between items-end mb-3">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Stress Exhaustion</p>
+                        <h4 id="res-stress-label" class="text-lg font-bold text-gray-900">Moderate</h4>
+                    </div>
+                    <span id="res-stress-pct" class="text-sm font-black text-emerald-600">50%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                    <div id="res-stress-bar" class="h-full bg-emerald-500 transition-all duration-1000"></div>
+                </div>
+            </div>
+
+            <div id="res-verdict-card" class="p-6 rounded-3xl border-2">
+                <h3 id="res-status-title" class="font-black text-lg mb-2"></h3>
+                <p id="res-status-desc" class="text-sm text-gray-600 leading-relaxed mb-4"></p>
+                <div class="bg-white/60 p-3 rounded-xl border border-white">
+                    <p id="res-pitch" class="text-sm font-bold text-gray-900 italic"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-6 text-center">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-widest">Connect with the Creators</p>
+            <div class="flex flex-col gap-2">
+                <a href="https://www.instagram.com/adhu.07__?igsh=OXpzZHd6NGk3enZz" target="_blank" class="text-xs font-bold py-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-emerald-50 transition">Adithyan 📸</a>
+                <a href="https://www.instagram.com/iamchris.io?igsh=bG1uMjJ1dnFneDNt" target="_blank" class="text-xs font-bold py-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-emerald-50 transition">Antony Chriss Simethy 📸</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 5-Option Questions with shuffled logic
+        const baseQuestions = [
+            { q: "Magnesium is involved in over how many body reactions?", options: ["50", "150", "300+", "1000", "500"], correct: 2 },
+            { q: "Which of these is a classic sign of Mg deficiency?", options: ["Hair loss", "Muscle twitches", "Blurry vision", "Sneezing", "Brittle nails"], correct: 1 },
+            { q: "What is the chemical symbol for Magnesium?", options: ["Mn", "Mg", "Ma", "Ms", "M"], correct: 1 },
+            { q: "60% of your body's Magnesium is stored in your...", options: ["Muscles", "Bones", "Blood", "Liver", "Hair"], correct: 1 },
+            { q: "Which food is a Magnesium 'Superfood'?", options: ["Milk", "Pumpkin Seeds", "White Bread", "Apples", "Cheese"], correct: 1 },
+            { q: "Mg helps regulate which energy molecule in cells?", options: ["Glucose", "ATP", "DNA", "RNA", "Proteins"], correct: 1 },
+            { q: "Which habit increases Magnesium burn?", options: ["Sleeping", "Drinking Coffee", "Drinking Water", "Meditation", "Eating Greens"], correct: 1 },
+            { q: "What is the atomic number of Magnesium?", options: ["10", "12", "14", "16", "24"], correct: 1 },
+            { q: "Magnesium helps relax muscles. Which mineral contracts them?", options: ["Zinc", "Calcium", "Iron", "Sodium", "Potassium"], correct: 1 },
+            { q: "Magnesium is essential for the health of which organ?", options: ["Heart", "Lungs", "Skin", "Ears", "Kidney"], correct: 0 },
+            { q: "Which vitamin improves Mg absorption?", options: ["Vitamin C", "Vitamin D", "Vitamin A", "Vitamin E", "Vitamin B12"], correct: 1 },
+            { q: "Deficiency in Magnesium can cause which sleep issue?", options: ["Over-sleeping", "Insomnia/Restlessness", "Sleepwalking", "Snoring", "Night Terrors"], correct: 1 },
+            { q: "Magnesium belongs to which element group?", options: ["Alkali", "Alkaline Earth", "Transition", "Noble Gas", "Rare Earth"], correct: 1 },
+            { q: "Excessive _____ intake blocks Mg absorption.", options: ["Water", "Sugar & Alcohol", "Protein", "Fiber", "Oxygen"], correct: 1 },
+            { q: "Magnesium is the center atom of which plant molecule?", options: ["Glucose", "Chlorophyll", "Cellulose", "Starch", "Vitamin C"], correct: 1 }
+        ];
+
+        let quizQuestions = [];
+        let userName = "", userAge = 0;
+        let currentQ = 0, quizScore = 0, quizLives = 3;
+        let calcStep = 1;
+        let calcData = { sex: 'male', activity: 1, foodScore: 0, symptomScore: 0, stress: 5, burn: 0, proteinHabit: 0 };
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function validateAndStart() {
+            userName = document.getElementById('user-name').value;
+            userAge = parseInt(document.getElementById('user-age').value);
+            if(!userName || !userAge) {
+                document.getElementById('intro-error').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        function startQuiz() {
+            // Shuffle the entire questions array for a new experience every time
+            quizQuestions = shuffleArray([...baseQuestions]);
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            currentQ = 0; quizScore = 0; quizLives = 3;
+            updateLives();
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = quizQuestions[currentQ];
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('question-count').innerText = `Question ${currentQ + 1} of 15`;
+            document.getElementById('progress').style.width = `${(currentQ / 15) * 100}%`;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            let optionsWithStatus = q.options.map((text, index) => ({
+                text,
+                isCorrect: index === q.correct
+            }));
+
+            // Shuffle options
+            shuffleArray(optionsWithStatus);
+
+            optionsWithStatus.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl font-semibold bg-white';
+                btn.innerText = opt.text;
+                btn.onclick = () => handleAnswer(opt.isCorrect, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(isCorrect, btn) {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+
+            if(isCorrect) {
+                quizScore++;
+                btn.classList.add('correct');
+            } else {
+                quizLives--;
+                btn.classList.add('wrong');
+                // Find and highlight correct answer
+                btns.forEach(b => {
+                    const originalCorrectText = quizQuestions[currentQ].options[quizQuestions[currentQ].correct];
+                    if(b.innerText === originalCorrectText) b.classList.add('correct');
+                });
+                updateLives();
+            }
+
+            setTimeout(() => {
+                currentQ++;
+                if(currentQ < 15 && quizLives > 0) renderQuestion();
+                else triggerReaction();
+            }, 800);
+        }
+
+        function updateLives() {
+            const container = document.getElementById('heart-container');
+            let h = '';
+            for(let i=0; i<3; i++) h += `<span class="${i < quizLives ? 'text-red-500' : 'text-gray-200'}">❤</span>`;
+            container.innerHTML = h;
+        }
+
+        function triggerReaction() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            const overlay = document.getElementById('reaction-overlay');
+            const emojiEl = document.getElementById('reaction-emoji');
+            const titleEl = document.getElementById('reaction-title');
+            const subEl = document.getElementById('reaction-subtitle');
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('opacity-100'), 50);
+
+            if(quizScore >= 12) {
+                overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-emerald-600 opacity-100";
+                emojiEl.innerText = "🏆";
+                titleEl.innerText = "WINNER!";
+                subEl.innerText = `${quizScore}/15 Questions Answered correctly. Exceptional!`;
+                createConfetti();
+            } else {
+                overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-red-600 opacity-100";
+                emojiEl.innerText = "❌";
+                titleEl.innerText = "FAILED!";
+                subEl.innerText = quizLives <= 0 ? "You ran out of lives!" : "Keep learning about Magnesium!";
+            }
+
+            setTimeout(() => {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    showQuizResults();
+                }, 500);
+            }, 3000);
+        }
+
+        function showQuizResults() {
+            const res = document.getElementById('result-screen');
+            res.classList.remove('hidden');
+            const icon = document.getElementById('result-icon');
+            const title = document.getElementById('result-title');
+            const text = document.getElementById('result-text');
+            const tag = document.getElementById('winner-tag');
+            document.getElementById('final-score').innerText = quizScore;
+            
+            if(quizScore >= 12) {
+                icon.innerText = '🏆'; title.innerText = 'MASTER!';
+                text.innerText = `Brilliant, ${userName}! You've earned your sample.`;
+                tag.classList.remove('hidden');
+            } else {
+                icon.innerText = '🔋'; title.innerText = 'KEEP GOING';
+                text.innerText = 'Good effort. Let\'s see what your body needs in the analysis.';
+            }
+        }
+
+        function startCalculator() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('calc-screen').classList.remove('hidden');
+            renderCalcStep();
+        }
+
+        function renderCalcStep() {
+            const container = document.getElementById('calc-content');
+            const stepText = document.getElementById('calc-step-text');
+            const progress = document.getElementById('calc-progress');
+            const nextBtn = document.getElementById('calc-next');
+            const prevBtn = document.getElementById('calc-prev');
+            stepText.innerText = `Step ${calcStep} of 6`;
+            progress.style.width = `${calcStep * 16.6}%`;
+            prevBtn.classList.toggle('hidden', calcStep === 1);
+            nextBtn.innerText = calcStep === 6 ? "Analyze Me" : "Continue";
+
+            if (calcStep === 1) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">The Baseline</h2><div class="space-y-4">
+                    <label class="block"><span class="text-[10px] font-bold uppercase text-gray-400">Sex Assigned at Birth</span>
+                    <select id="c-sex" class="w-full mt-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none"><option value="male">Male</option><option value="female">Female</option></select></label>
+                    <label class="block"><span class="text-[10px] font-bold uppercase text-gray-400">Activity Level</span>
+                    <select id="c-activity" class="w-full mt-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none"><option value="1">Sedentary</option><option value="1.3">Active (Workout 3x/week)</option><option value="1.6">Heavy (Athlete)</option></select></label></div>`;
+            } else if (calcStep === 2) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Dietary Check</h2><p class="text-xs mb-4 text-gray-500 uppercase font-bold">Do you eat these daily?</p>
+                    ${['Leafy Greens', 'Pumpkin Seeds', 'Whole Grains', 'Dark Chocolate'].map((f, i) => `
+                    <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${f}</span><input type="checkbox" id="f-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
+            } else if (calcStep === 3) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Protein Intake</h2><p class="text-sm text-gray-500 mb-6">How do you manage your protein needs?</p>
+                    <select id="c-protein" class="w-full p-4 rounded-xl border-2 border-gray-100 font-bold outline-none">
+                    <option value="0">I don't track it</option><option value="10">Try to include it in some meals</option><option value="30">I actively seek high-protein foods</option></select>`;
+            } else if (calcStep === 4) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Physical Tension</h2><p class="text-sm text-gray-500 mb-4 uppercase text-[10px] font-bold">Check what applies:</p>
+                    ${['Sudden Muscle Cramps', 'Evening Headaches', 'Frequent Eyelid Twitches', 'Teeth Grinding'].map((s, i) => `
+                    <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${s}</span><input type="checkbox" id="s-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
+            } else if (calcStep === 5) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Deep Stress Scan</h2><p class="text-xs mb-4 text-gray-500 uppercase font-bold">Recent mental state:</p>
+                    ${['Feeling Overwhelmed', 'Poor Sleep Quality', 'Irritable/Short Fuse', 'Tight Deadlines/Exams'].map((st, i) => `
+                    <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${st}</span><input type="checkbox" id="st-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
+            } else if (calcStep === 6) {
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Lifestyle Burn</h2><label class="block mb-6"><span class="text-[10px] font-bold uppercase text-gray-400">Coffee/Tea (Daily Cups)</span>
+                    <input type="range" id="c-caff" min="0" max="8" value="2" class="w-full mt-2"></label>
+                    <label class="flex justify-between p-4 bg-gray-50 rounded-xl cursor-pointer"><span class="text-sm font-bold">High-Sugar Diet?</span><input type="checkbox" id="c-sugar" class="w-6 h-6 accent-emerald-500"></label>`;
+            }
+        }
+
+        function nextCalcStep() {
+            if (calcStep === 1) {
+                calcData.sex = document.getElementById('c-sex').value;
+                calcData.activity = parseFloat(document.getElementById('c-activity').value);
+                calcData.goal = (calcData.sex === 'male' ? 420 : 320) * calcData.activity;
+            } else if (calcStep === 2) {
+                let fs = 0; for(let i=0; i<4; i++) if(document.getElementById(`f-${i}`).checked) fs += 80;
+                calcData.foodScore = 80 + fs;
+            } else if (calcStep === 3) {
+                calcData.proteinHabit = parseInt(document.getElementById('c-protein').value);
+            } else if (calcStep === 4) {
+                let ss = 0; for(let i=0; i<4; i++) if(document.getElementById(`s-${i}`).checked) ss += 15;
+                calcData.symptomScore = ss;
+            } else if (calcStep === 5) {
+                let sts = 0; for(let i=0; i<4; i++) if(document.getElementById(`st-${i}`).checked) sts += 20;
+                calcData.stress = sts;
+            } else if (calcStep === 6) {
+                const caff = parseInt(document.getElementById('c-caff').value) * 20;
+                const sugar = document.getElementById('c-sugar').checked ? 50 : 0;
+                calcData.burn = caff + sugar + (calcData.stress / 2);
+                showFinalAnalysis(); return;
+            }
+            calcStep++; renderCalcStep();
+        }
+
+        function prevCalcStep() { calcStep--; renderCalcStep(); }
+
+        function showFinalAnalysis() {
+            document.getElementById('calc-screen').classList.add('hidden');
+            const res = document.getElementById('calc-result');
+            res.classList.remove('hidden');
+
+            const deficit = (calcData.goal + calcData.burn) - calcData.foodScore;
+            const stressPct = Math.min(100, calcData.stress + calcData.symptomScore);
+            
+            document.getElementById('res-name').innerText = userName;
+            document.getElementById('res-age').innerText = userAge;
+            document.getElementById('res-goal').innerText = Math.round(calcData.goal);
+            document.getElementById('res-protein').innerText = Math.round(userAge * 0.8 + (calcData.activity * 15));
+            document.getElementById('res-stress-pct').innerText = `${Math.round(stressPct)}%`;
+            
+            const bar = document.getElementById('res-stress-bar');
+            bar.style.width = `${stressPct}%`;
+            bar.className = `h-full transition-all duration-1000 ${stressPct > 70 ? 'bg-red-500' : 'bg-emerald-500'}`;
+
+            const title = document.getElementById('res-status-title');
+            const desc = document.getElementById('res-status-desc');
+            const pitch = document.getElementById('res-pitch');
+            const card = document.getElementById('res-verdict-card');
+
+            if(quizScore >= 12) {
+                createConfetti();
+                card.className = "p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50";
+                title.innerText = "Health Profile: Optimal";
+                desc.innerText = `Great job, ${userName}! You are managing your minerals well, but watch out for that ${Math.round(stressPct)}% stress load.`;
+                pitch.innerText = "Show this to the staff to claim your MAGNICO sample!";
+            } else if(stressPct > 70) {
+                card.className = "p-6 rounded-3xl border-2 border-red-100 bg-red-50";
+                title.innerText = "Burnout Risk Alert";
+                desc.innerText = `With your stress levels at ${Math.round(stressPct)}%, your body is dumping Magnesium at a dangerous rate.`;
+                pitch.innerText = "MAGNICO provides 100% RDI of highly bioavailable Magnesium to stop the depletion.";
+            } else {
+                card.className = "p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50";
+                title.innerText = "Needs Optimized Fuel";
+                desc.innerText = "You have a decent baseline, but your activity levels mean your brain and heart are craving a steady flow of pure minerals.";
+                pitch.innerText = "A MAGNICO bar daily ensures you never hit that energy crash.";
+            }
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            for(let i=0; i<80; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.backgroundColor = ['#10b981', '#000', '#fdfdfd', '#facc15', '#ef4444'][Math.floor(Math.random()*5)];
+                c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                c.style.opacity = Math.random();
+                container.appendChild(c);
+            }
+        }
+    </script>
+</body>
+</html>
