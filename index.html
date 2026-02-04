@@ -108,10 +108,7 @@
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl"></div>
         
         <div class="relative z-10">
-            <div class="inline-block px-4 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-widest mb-4">
-                Expo 2024 Special
-            </div>
-            <h1 class="text-4xl font-black tracking-tighter text-black mb-2">MAGNICO</h1>
+            <h1 class="text-4xl font-black tracking-tighter text-black mb-2 mt-4">MAGNICO</h1>
             <p class="text-gray-500 font-medium mb-8">The Essential Mineral Experience</p>
             
             <div class="text-left space-y-4 mb-8">
@@ -142,7 +139,7 @@
         <h2 class="text-2xl font-extrabold mb-4">Challenge Rules</h2>
         <div class="bg-emerald-50 rounded-xl p-5 mb-8 text-left border border-emerald-100">
             <ul class="text-sm space-y-3">
-                <li class="flex gap-2"><span>✅</span> 15 Questions (Now Randomly Shuffled).</li>
+                <li class="flex gap-2"><span>✅</span> 15 Questions (Randomly Shuffled).</li>
                 <li class="flex gap-2"><span>✅</span> 5 Options per question.</li>
                 <li class="flex gap-2 font-bold text-emerald-800"><span>🎁</span> Score 12+ correctly for a FREE sample!</li>
                 <li class="flex gap-2 text-gray-500 italic"><span>⚠️</span> Winners only. Good luck!</li>
@@ -257,7 +254,7 @@
     </div>
 
     <script>
-        // 5-Option Questions with shuffled logic
+        // Data & Logic Initialization
         const baseQuestions = [
             { q: "Magnesium is involved in over how many body reactions?", options: ["50", "150", "300+", "1000", "500"], correct: 2 },
             { q: "Which of these is a classic sign of Mg deficiency?", options: ["Hair loss", "Muscle twitches", "Blurry vision", "Sneezing", "Brittle nails"], correct: 1 },
@@ -302,7 +299,6 @@
         }
 
         function startQuiz() {
-            // Shuffle the entire questions array for a new experience every time
             quizQuestions = shuffleArray([...baseQuestions]);
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
@@ -325,12 +321,11 @@
                 isCorrect: index === q.correct
             }));
 
-            // Shuffle options
             shuffleArray(optionsWithStatus);
 
             optionsWithStatus.forEach((opt) => {
                 const btn = document.createElement('button');
-                btn.className = 'option-btn w-full text-left p-4 rounded-xl font-semibold bg-white';
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl font-semibold bg-white shadow-sm';
                 btn.innerText = opt.text;
                 btn.onclick = () => handleAnswer(opt.isCorrect, btn);
                 container.appendChild(btn);
@@ -347,7 +342,6 @@
             } else {
                 quizLives--;
                 btn.classList.add('wrong');
-                // Find and highlight correct answer
                 btns.forEach(b => {
                     const originalCorrectText = quizQuestions[currentQ].options[quizQuestions[currentQ].correct];
                     if(b.innerText === originalCorrectText) b.classList.add('correct');
@@ -383,13 +377,13 @@
                 overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-emerald-600 opacity-100";
                 emojiEl.innerText = "🏆";
                 titleEl.innerText = "WINNER!";
-                subEl.innerText = `${quizScore}/15 Questions Answered correctly. Exceptional!`;
+                subEl.innerText = `Great score: ${quizScore}/15`;
                 createConfetti();
             } else {
                 overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-red-600 opacity-100";
                 emojiEl.innerText = "❌";
                 titleEl.innerText = "FAILED!";
-                subEl.innerText = quizLives <= 0 ? "You ran out of lives!" : "Keep learning about Magnesium!";
+                subEl.innerText = quizLives <= 0 ? "Out of lives!" : `Score: ${quizScore}/15`;
             }
 
             setTimeout(() => {
@@ -417,7 +411,7 @@
                 tag.classList.remove('hidden');
             } else {
                 icon.innerText = '🔋'; title.innerText = 'KEEP GOING';
-                text.innerText = 'Good effort. Let\'s see what your body needs in the analysis.';
+                text.innerText = 'Let\'s check your health profile analysis.';
             }
         }
 
@@ -443,22 +437,21 @@
                     <label class="block"><span class="text-[10px] font-bold uppercase text-gray-400">Sex Assigned at Birth</span>
                     <select id="c-sex" class="w-full mt-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none"><option value="male">Male</option><option value="female">Female</option></select></label>
                     <label class="block"><span class="text-[10px] font-bold uppercase text-gray-400">Activity Level</span>
-                    <select id="c-activity" class="w-full mt-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none"><option value="1">Sedentary</option><option value="1.3">Active (Workout 3x/week)</option><option value="1.6">Heavy (Athlete)</option></select></label></div>`;
+                    <select id="c-activity" class="w-full mt-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none"><option value="1">Sedentary</option><option value="1.3">Active</option><option value="1.6">Heavy (Athlete)</option></select></label></div>`;
             } else if (calcStep === 2) {
-                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Dietary Check</h2><p class="text-xs mb-4 text-gray-500 uppercase font-bold">Do you eat these daily?</p>
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Dietary Check</h2>
                     ${['Leafy Greens', 'Pumpkin Seeds', 'Whole Grains', 'Dark Chocolate'].map((f, i) => `
                     <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${f}</span><input type="checkbox" id="f-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
             } else if (calcStep === 3) {
-                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Protein Intake</h2><p class="text-sm text-gray-500 mb-6">How do you manage your protein needs?</p>
-                    <select id="c-protein" class="w-full p-4 rounded-xl border-2 border-gray-100 font-bold outline-none">
-                    <option value="0">I don't track it</option><option value="10">Try to include it in some meals</option><option value="30">I actively seek high-protein foods</option></select>`;
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Protein Intake</h2><select id="c-protein" class="w-full p-4 rounded-xl border-2 border-gray-100 font-bold outline-none">
+                    <option value="0">I don't track it</option><option value="10">Occasional protein</option><option value="30">High protein diet</option></select>`;
             } else if (calcStep === 4) {
-                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Physical Tension</h2><p class="text-sm text-gray-500 mb-4 uppercase text-[10px] font-bold">Check what applies:</p>
-                    ${['Sudden Muscle Cramps', 'Evening Headaches', 'Frequent Eyelid Twitches', 'Teeth Grinding'].map((s, i) => `
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Physical Tension</h2>
+                    ${['Muscle Cramps', 'Headaches', 'Eyelid Twitches', 'Teeth Grinding'].map((s, i) => `
                     <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${s}</span><input type="checkbox" id="s-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
             } else if (calcStep === 5) {
-                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Deep Stress Scan</h2><p class="text-xs mb-4 text-gray-500 uppercase font-bold">Recent mental state:</p>
-                    ${['Feeling Overwhelmed', 'Poor Sleep Quality', 'Irritable/Short Fuse', 'Tight Deadlines/Exams'].map((st, i) => `
+                container.innerHTML = `<h2 class="text-xl font-bold mb-4">Stress Scan</h2>
+                    ${['Overwhelmed', 'Poor Sleep', 'Irritability', 'Exams/Deadlines'].map((st, i) => `
                     <label class="flex justify-between p-4 bg-gray-50 rounded-xl mb-2 cursor-pointer"><span class="text-sm font-bold">${st}</span><input type="checkbox" id="st-${i}" class="w-6 h-6 accent-emerald-500"></label>`).join('')}`;
             } else if (calcStep === 6) {
                 container.innerHTML = `<h2 class="text-xl font-bold mb-4">Lifestyle Burn</h2><label class="block mb-6"><span class="text-[10px] font-bold uppercase text-gray-400">Coffee/Tea (Daily Cups)</span>
@@ -521,18 +514,18 @@
                 createConfetti();
                 card.className = "p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50";
                 title.innerText = "Health Profile: Optimal";
-                desc.innerText = `Great job, ${userName}! You are managing your minerals well, but watch out for that ${Math.round(stressPct)}% stress load.`;
-                pitch.innerText = "Show this to the staff to claim your MAGNICO sample!";
+                desc.innerText = `Excellent work, ${userName}! Your Mg baseline is strong.`;
+                pitch.innerText = "Show this to our staff to claim your free MAGNICO bar!";
             } else if(stressPct > 70) {
                 card.className = "p-6 rounded-3xl border-2 border-red-100 bg-red-50";
-                title.innerText = "Burnout Risk Alert";
-                desc.innerText = `With your stress levels at ${Math.round(stressPct)}%, your body is dumping Magnesium at a dangerous rate.`;
-                pitch.innerText = "MAGNICO provides 100% RDI of highly bioavailable Magnesium to stop the depletion.";
+                title.innerText = "High Depletion Risk";
+                desc.innerText = `At ${Math.round(stressPct)}% stress, your magnesium is burning fast.`;
+                pitch.innerText = "MAGNICO restores 100% RDI of pure magnesium to help you recover.";
             } else {
                 card.className = "p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50";
-                title.innerText = "Needs Optimized Fuel";
-                desc.innerText = "You have a decent baseline, but your activity levels mean your brain and heart are craving a steady flow of pure minerals.";
-                pitch.innerText = "A MAGNICO bar daily ensures you never hit that energy crash.";
+                title.innerText = "Maintenance Mode";
+                desc.innerText = "You're doing okay, but your lifestyle needs consistent support.";
+                pitch.innerText = "A MAGNICO bar is the perfect daily partner for peak performance.";
             }
         }
 
