@@ -124,10 +124,10 @@
                 </div>
             </div>
 
-            <button onclick="validateAndStart()" class="w-full bg-black text-white font-bold py-5 rounded-2xl hover:scale-[1.02] transition shadow-xl text-lg">
+            <button onclick="validateAndStart()" class="w-full bg-black text-white font-bold py-5 rounded-2xl hover:scale-[1.02] transition shadow-xl text-lg mb-4">
                 Start Experience
             </button>
-            <p id="intro-error" class="text-red-500 text-xs mt-3 font-bold hidden">Please enter your name and age to continue.</p>
+            <p id="intro-error" class="text-red-500 text-xs font-bold hidden">Please enter your name and age to continue.</p>
         </div>
     </div>
 
@@ -171,8 +171,14 @@
         <h2 id="result-title" class="text-3xl font-extrabold mb-2"></h2>
         <p id="result-text" class="text-gray-500 mb-8"></p>
         
-        <div id="winner-tag" class="hidden mb-6 py-2 px-4 bg-emerald-500 text-white font-black rounded-full animate-bounce uppercase text-xs tracking-widest">
-            Eligible for Free Sample! 🎁
+        <!-- WINNER FEEDBACK SECTION -->
+        <div id="winner-feedback-section" class="hidden mb-8">
+            <div class="bg-emerald-50 border-2 border-emerald-100 rounded-2xl p-6 text-center">
+                <p class="text-emerald-700 font-bold mb-4">🏆 Congratulations Winner! <br><span class="text-xs">Before your analysis, please help us with a quick feedback:</span></p>
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdTZio8DprZgZnRTwCWiXOJf8nrx3rkz4s5WJ2VL-ETAYRiCg/viewform?usp=publish-editor" target="_blank" class="inline-block bg-emerald-500 text-white font-black py-3 px-6 rounded-xl shadow-md hover:bg-emerald-600 transition active:scale-95">
+                    Open Feedback Form 📋
+                </a>
+            </div>
         </div>
 
         <div class="bg-gray-50 rounded-2xl py-4 px-4 mb-8 border border-gray-100">
@@ -254,7 +260,6 @@
     </div>
 
     <script>
-        // Data & Logic Initialization
         const baseQuestions = [
             { q: "Magnesium is involved in over how many body reactions?", options: ["50", "150", "300+", "1000", "500"], correct: 2 },
             { q: "Which of these is a classic sign of Mg deficiency?", options: ["Hair loss", "Muscle twitches", "Blurry vision", "Sneezing", "Brittle nails"], correct: 1 },
@@ -312,17 +317,10 @@
             document.getElementById('question-text').innerText = q.q;
             document.getElementById('question-count').innerText = `Question ${currentQ + 1} of 15`;
             document.getElementById('progress').style.width = `${(currentQ / 15) * 100}%`;
-            
             const container = document.getElementById('options-container');
             container.innerHTML = '';
-
-            let optionsWithStatus = q.options.map((text, index) => ({
-                text,
-                isCorrect: index === q.correct
-            }));
-
+            let optionsWithStatus = q.options.map((text, index) => ({ text, isCorrect: index === q.correct }));
             shuffleArray(optionsWithStatus);
-
             optionsWithStatus.forEach((opt) => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn w-full text-left p-4 rounded-xl font-semibold bg-white shadow-sm';
@@ -335,20 +333,11 @@
         function handleAnswer(isCorrect, btn) {
             const btns = document.querySelectorAll('.option-btn');
             btns.forEach(b => b.disabled = true);
-
-            if(isCorrect) {
-                quizScore++;
-                btn.classList.add('correct');
-            } else {
-                quizLives--;
-                btn.classList.add('wrong');
-                btns.forEach(b => {
-                    const originalCorrectText = quizQuestions[currentQ].options[quizQuestions[currentQ].correct];
-                    if(b.innerText === originalCorrectText) b.classList.add('correct');
-                });
-                updateLives();
-            }
-
+            if(isCorrect) { quizScore++; btn.classList.add('correct'); }
+            else { quizLives--; btn.classList.add('wrong'); btns.forEach(b => {
+                const originalCorrectText = quizQuestions[currentQ].options[quizQuestions[currentQ].correct];
+                if(b.innerText === originalCorrectText) b.classList.add('correct');
+            }); updateLives(); }
             setTimeout(() => {
                 currentQ++;
                 if(currentQ < 15 && quizLives > 0) renderQuestion();
@@ -369,30 +358,19 @@
             const emojiEl = document.getElementById('reaction-emoji');
             const titleEl = document.getElementById('reaction-title');
             const subEl = document.getElementById('reaction-subtitle');
-
             overlay.classList.remove('hidden');
             setTimeout(() => overlay.classList.add('opacity-100'), 50);
-
             if(quizScore >= 12) {
                 overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-emerald-600 opacity-100";
-                emojiEl.innerText = "🏆";
-                titleEl.innerText = "WINNER!";
-                subEl.innerText = `Great score: ${quizScore}/15`;
-                createConfetti();
+                emojiEl.innerText = "🏆"; titleEl.innerText = "WINNER!"; subEl.innerText = `Final Score: ${quizScore}/15`; createConfetti();
             } else {
                 overlay.className = "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-500 bg-red-600 opacity-100";
-                emojiEl.innerText = "❌";
-                titleEl.innerText = "FAILED!";
-                subEl.innerText = quizLives <= 0 ? "Out of lives!" : `Score: ${quizScore}/15`;
+                emojiEl.innerText = "❌"; titleEl.innerText = "FAILED!"; subEl.innerText = quizLives <= 0 ? "No lives left!" : `Score: ${quizScore}/15`;
             }
-
             setTimeout(() => {
                 overlay.classList.remove('opacity-100');
                 overlay.classList.add('opacity-0');
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                    showQuizResults();
-                }, 500);
+                setTimeout(() => { overlay.classList.add('hidden'); showQuizResults(); }, 500);
             }, 3000);
         }
 
@@ -402,16 +380,16 @@
             const icon = document.getElementById('result-icon');
             const title = document.getElementById('result-title');
             const text = document.getElementById('result-text');
-            const tag = document.getElementById('winner-tag');
+            const feedbackSection = document.getElementById('winner-feedback-section');
             document.getElementById('final-score').innerText = quizScore;
-            
             if(quizScore >= 12) {
                 icon.innerText = '🏆'; title.innerText = 'MASTER!';
-                text.innerText = `Brilliant, ${userName}! You've earned your sample.`;
-                tag.classList.remove('hidden');
+                text.innerText = `Great work, ${userName}! You qualified for a sample.`;
+                feedbackSection.classList.remove('hidden');
             } else {
-                icon.innerText = '🔋'; title.innerText = 'KEEP GOING';
-                text.innerText = 'Let\'s check your health profile analysis.';
+                icon.innerText = '🔋'; title.innerText = 'NOT QUITE';
+                text.innerText = 'You missed the winning score. Try the analysis anyway!';
+                feedbackSection.classList.add('hidden');
             }
         }
 
@@ -431,7 +409,6 @@
             progress.style.width = `${calcStep * 16.6}%`;
             prevBtn.classList.toggle('hidden', calcStep === 1);
             nextBtn.innerText = calcStep === 6 ? "Analyze Me" : "Continue";
-
             if (calcStep === 1) {
                 container.innerHTML = `<h2 class="text-xl font-bold mb-4">The Baseline</h2><div class="space-y-4">
                     <label class="block"><span class="text-[10px] font-bold uppercase text-gray-400">Sex Assigned at Birth</span>
@@ -491,25 +468,20 @@
             document.getElementById('calc-screen').classList.add('hidden');
             const res = document.getElementById('calc-result');
             res.classList.remove('hidden');
-
             const deficit = (calcData.goal + calcData.burn) - calcData.foodScore;
             const stressPct = Math.min(100, calcData.stress + calcData.symptomScore);
-            
             document.getElementById('res-name').innerText = userName;
             document.getElementById('res-age').innerText = userAge;
             document.getElementById('res-goal').innerText = Math.round(calcData.goal);
             document.getElementById('res-protein').innerText = Math.round(userAge * 0.8 + (calcData.activity * 15));
             document.getElementById('res-stress-pct').innerText = `${Math.round(stressPct)}%`;
-            
             const bar = document.getElementById('res-stress-bar');
             bar.style.width = `${stressPct}%`;
             bar.className = `h-full transition-all duration-1000 ${stressPct > 70 ? 'bg-red-500' : 'bg-emerald-500'}`;
-
             const title = document.getElementById('res-status-title');
             const desc = document.getElementById('res-status-desc');
             const pitch = document.getElementById('res-pitch');
             const card = document.getElementById('res-verdict-card');
-
             if(quizScore >= 12) {
                 createConfetti();
                 card.className = "p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50";
